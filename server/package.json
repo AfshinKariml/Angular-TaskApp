@@ -1,0 +1,26 @@
+{
+  "name": "task-manager-server",
+  "version": "1.0.0",
+  "description": "JSON Server for Task Manager Angular App",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "json-server": "json-server --watch db.json --port 3000"
+  },
+  "keywords": [
+    "json-server",
+    "api",
+    "mock",
+    "tasks",
+    "angular"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "json-server": "^0.17.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
