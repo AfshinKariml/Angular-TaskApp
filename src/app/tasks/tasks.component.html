@@ -1,18 +1,43 @@
 @if(isAddingTask){
-<app-new-task [userId]="userId" (close)="onCloseAddTask()"/>
+<app-new-task 
+  [userId]="userId" 
+  (close)="onCloseAddTask()"
+  (taskAdded)="onTaskAdded($event)" />
 }
+
 <section id="tasks">
     <header>
         <h2>{{name}}'s Tasks</h2>
     </header>
+    
     <menu>
         <button (click)="onStartAddTask()">ADD Task</button>
     </menu>
-    <ul>
-        @for (task of selectedUserTasks; track task.id) {
-        <li>
-            <app-task [task]="task"  />
-        </li>
+
+    @if (error) {
+        <div class="error">
+            <p>{{ error }}</p>
+            <button (click)="loadTasks()">Try Again</button>
+        </div>
+    }
+
+    @if (selectedUserTasks | async; as tasks) {
+        @if (tasks.length > 0) {
+            <ul>
+                @for (task of tasks; track task.id) {
+                <li>
+                    <app-task [task]="task" (taskCompleted)="onTaskCompleted($event)" />
+                </li>
+                }
+            </ul>
+        } @else {
+            <div class="no-tasks">
+                <p>No tasks found for {{name}}.</p>
+            </div>
         }
-    </ul>
+    } @else {
+        <div class="loading">
+            <p>Loading tasks...</p>
+        </div>
+    }
 </section>

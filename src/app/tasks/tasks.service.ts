@@ -1,65 +1,87 @@
 import { Injectable } from '@angular/core';
-import { type NewTaskData } from './task/task.model';
+import { Task, type NewTaskData } from './task/task.model';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, throwError, catchError, tap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
 })
 export class TaskService {
-  private tasks = [
-    {
-      id: 't1',
-      userId: 'u1',
-      title: 'Master Angular',
-      summary:
-        'Learn all the basic and advaanced features of Angular & how to apply them.',
-      dueData: '2025-12-31',
-    },
-    {
-      id: 't2',
-      userId: 'u2',
-      title: 'Build first protype',
-      summary: 'build a first protype of online shop website',
-      dueData: '2025-5-31',
-    },
-    {
-      id: 't3',
-      userId: 'u3',
-      title: 'prepare issu template',
-      summary:
-        'prepare and describe an issue template wich will help with project managment',
-      dueData: '2025-6-15',
-    },
-  ];
+  private apiUrl = 'http://localhost:3000/tasks';
 
-  constructor() {
-    const tasks = localStorage.getItem('tasks');
+  constructor(private http: HttpClient) {}
 
-    if (tasks) {
-      this.tasks = JSON.parse(tasks);
-    }
+  getAllTask(): Observable<Task[]> {
+    return this.http.get<Task[]>(this.apiUrl).pipe(
+      catchError(this.handleError)
+    );
   }
 
-  getUserTasks(userId: string) {
-    return this.tasks.filter((task) => task.userId === userId);
+  getUserTasks(userId: string): Observable<Task[]> {
+    console.log('Fetching tasks for user:', userId);
+    return this.http.get<Task[]>(`${this.apiUrl}?userId=${userId}`).pipe(
+      tap(tasks => console.log('Retrieved tasks:', tasks)),
+      catchError(this.handleError)
+    );
   }
 
-  addTask(taskData: NewTaskData, userId: string) {
-    this.tasks.unshift({
+  getTaskById(id: string): Observable<Task> {
+    return this.http.get<Task>(`${this.apiUrl}/${id}`).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  addTask(taskData: NewTaskData, userId: string): Observable<Task> {
+    const newTask = {
       userId: userId,
-      id: new Date().getTime().toString(),
       title: taskData.title,
       summary: taskData.summary,
-      dueData: taskData.date,
-    });
-    this.SaveTask();
+      dueDate: taskData.date,
+      completed: false
+    };
+    
+    console.log('Adding task:', newTask);
+    
+    return this.http.post<Task>(this.apiUrl, newTask).pipe(
+      tap(createdTask => console.log('Task created:', createdTask)),
+      catchError(this.handleError)
+    );
   }
 
-  removeTask(id: string) {
-    return (this.tasks = this.tasks.filter((task) => task.id !== id));
-    this.SaveTask();
+  updateTask(id: string, taskData: Partial<Task>): Observable<Task> {
+    return this.http.patch<Task>(`${this.apiUrl}/${id}`, taskData).pipe(
+      catchError(this.handleError)
+    );
   }
 
-  private SaveTask() {
-    localStorage.setItem('tasks', JSON.stringify(this.tasks));
+  removeTask(id: string): Observable<void> {
+    console.log('Removing task:', id);
+    return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
+      tap(() => console.log('Task removed successfully:', id)),
+      catchError(this.handleError)
+    );
+  }
+
+  markTaskAsCompleted(id: string): Observable<Task> {
+    return this.http.patch<Task>(`${this.apiUrl}/${id}`, { completed: true }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  getTasksByStatus(completed: boolean): Observable<Task[]> {
+    return this.http.get<Task[]>(`${this.apiUrl}?completed=${completed}`).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  private handleError(error: HttpErrorResponse) {
+    let errorMessage = 'An unknown error occurred!';
+    if (error.error instanceof ErrorEvent) {
+      errorMessage = `Error: ${error.error.message}`;
+    } else {
+      errorMessage = `Error Code: ${error.status}\nMessage: ${error.message}`;
+    }
+    console.error(errorMessage);
+    return throwError(() => new Error(errorMessage));
   }
 }
